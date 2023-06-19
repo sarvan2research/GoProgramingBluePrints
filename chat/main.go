@@ -8,32 +8,24 @@ import (
 	"text/template"
 )
 
-type templateHandlerStruct struct {
+type templateHandler struct {
 	once     sync.Once
 	fileName string
 	templ    *template.Template
 }
 
-func (t *templateHandlerStruct) ServeHttp(w http.ResponseWriter, r *http.Request) {
+func (t *templateHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	t.once.Do(func() {
 		t.templ = template.Must(template.ParseFiles(filepath.Join("templates", t.fileName)))
 	})
-	t.templ.Execute(w, nil)
+	t.templ.Execute(writer, nil)
 }
 
 func main() {
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
-		w.Write([]byte(`<html> 
-        <head> 
-          <title>Chat</title> 
-        </head> 
-        <body> 
-          Let's chat! 
-        </body> 
-      </html>`))
-	})
+	r := newRoom()
+	http.Handle("/", &templateHandler{fileName: "chat.html"})
+	http.Handle("/room", r)
+	go r.run()
 
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal("ListenAndServe", err)
