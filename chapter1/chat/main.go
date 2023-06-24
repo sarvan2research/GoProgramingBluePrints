@@ -1,9 +1,11 @@
 package main
 
 import (
+	"GOProgrammingBluePrints/chapter1/trace"
 	"flag"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sync"
 	"text/template"
@@ -26,6 +28,7 @@ func main() {
 	var addr = flag.String("addr", ":8080", "The addr of the  application.")
 	flag.Parse() // parse the flags
 	r := newRoom()
+	r.tracer = trace.New(os.Stdout)
 	http.Handle("/", &templateHandler{fileName: "chat.html"})
 	http.Handle("/room", r)
 	go r.run()
