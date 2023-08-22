@@ -3,6 +3,11 @@ package main
 import (
 	"GOProgrammingBluePrints/chapter1/trace"
 	"flag"
+	"github.com/stretchr/gomniauth"
+	"github.com/stretchr/gomniauth/providers/facebook"
+	"github.com/stretchr/gomniauth/providers/github"
+	"github.com/stretchr/gomniauth/providers/google"
+	"github.com/stretchr/objx"
 	"log"
 	"net/http"
 	"os"
@@ -21,19 +26,40 @@ func (t *templateHandler) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	t.once.Do(func() {
 		t.templ = template.Must(template.ParseFiles(filepath.Join("templates", t.fileName)))
 	})
-	t.templ.Execute(writer, request)
+	data := map[string]interface{}{
+		"Host": request.Host,
+	}
+	if authCookie, err := request.Cookie("auth"); err == nil {
+		data["UserData"] = objx.MustFromBase64(authCookie.Value)
+	}
+
+	t.templ.Execute(writer, data)
 }
 
+var host = flag.String("host", ":8080", "The addr of the  application.")
+
 func main() {
-	var addr = flag.String("addr", ":8080", "The addr of the  application.")
+
 	flag.Parse() // parse the flags
+	gomniauth.SetSecurityKey("OWN TEST SIGNATURE SARVAN")
+	gomniauth.WithProviders(
+		facebook.New("930805643740-4ti2p9nplh3flth438fl2711lu4egci1.apps.googleusercontent.com", "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",
+			"http://localhost:8080/auth/callback/facebook"),
+		github.New("key", "secret",
+			"http://localhost:8080/auth/callback/github"),
+		google.New("930805643740-4ti2p9nplh3flth438fl2711lu4egci1.apps.googleusercontent.com", "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",
+			"http://localhost:8080/auth/callback/google"),
+	)
 	r := newRoom()
 	r.tracer = trace.New(os.Stdout)
-	http.Handle("/", &templateHandler{fileName: "chat.html"})
+	//http.Handle("/", &templateHandler{fileName: "chat.html"})
+	http.Handle("/chat", MustAuth(&templateHandler{fileName: "chat.html"}))
+	http.Handle("/login", &templateHandler{fileName: "login.html"})
+	http.HandleFunc("/auth/", loginHandler)
 	http.Handle("/room", r)
 	go r.run()
-	log.Println("Starting web server on", *addr)
-	if err := http.ListenAndServe(*addr, nil); err != nil {
+	log.Println("Starting web server on", *host)
+	if err := http.ListenAndServe(*host, nil); err != nil {
 		log.Fatal("ListenAndServe", err)
 	}
 }
