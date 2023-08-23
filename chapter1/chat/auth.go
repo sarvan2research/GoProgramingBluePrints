@@ -15,15 +15,17 @@ type authHandler struct {
 
 func (a *authHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
-	_, err := request.Cookie("auth")
-	if err == http.ErrNoCookie {
+	if cookie, err := request.Cookie("auth"); err == http.ErrNoCookie || cookie.Value == "" {
+		// not authenticated by checking auth cookie not found
 		writer.Header().Set("Location", "/login")
 		writer.WriteHeader(http.StatusTemporaryRedirect)
-	}
-	if err != nil {
+	} else if err != nil {
+		// different error getting cookie
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
+	} else {
+		// success call
+		a.next.ServeHTTP(writer, request)
 	}
-	a.next.ServeHTTP(writer, request)
 }
 
 func MustAuth(handler http.Handler) http.Handler {
@@ -77,7 +79,8 @@ func loginHandler(writer http.ResponseWriter, r *http.Request) {
 			return
 		}
 		authCookieValue := objx.New(map[string]interface{}{
-			"name": user.Name(),
+			"name":       user.Name(),
+			"avatar_url": user.AvatarURL(),
 		}).MustBase64()
 		http.SetCookie(writer, &http.Cookie{
 			Name:  "auth",

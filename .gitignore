@@ -2,3 +2,4 @@
 /.idea/GOProgrammingBlueprints.iml
 /.idea/vcs.xml
 /.idea/modules.xml
+**/build/*

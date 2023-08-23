@@ -56,6 +56,16 @@ func main() {
 	http.Handle("/chat", MustAuth(&templateHandler{fileName: "chat.html"}))
 	http.Handle("/login", &templateHandler{fileName: "login.html"})
 	http.HandleFunc("/auth/", loginHandler)
+	http.HandleFunc("/logout", func(writer http.ResponseWriter, request *http.Request) {
+		http.SetCookie(writer, &http.Cookie{
+			Name:   "auth",
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1,
+		})
+		writer.Header().Set("Location", "/chat")
+		writer.WriteHeader(http.StatusTemporaryRedirect)
+	})
 	http.Handle("/room", r)
 	go r.run()
 	log.Println("Starting web server on", *host)
