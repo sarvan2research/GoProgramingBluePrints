@@ -11,6 +11,8 @@ import (
 
 var ErrNoAvatarURL = errors.New("chat:Unable to get an avatar URL.")
 
+type TryAvatars []Avatar
+
 // Avatar represents types capable of representing
 // user profile pictures.
 type Avatar interface {
@@ -58,6 +60,15 @@ func (FileSystemAvatar) GetAvatarURL(c ChatUser) (string, error) {
 			if match, _ := path.Match(c.UniqueID()+"*", file.Name()); match {
 				return "/avatars/" + file.Name(), nil
 			}
+		}
+	}
+	return "", ErrNoAvatarURL
+}
+
+func (t TryAvatars) GetAvatarURL(u ChatUser) (string, error) {
+	for _, avatar := range t {
+		if url, err := avatar.GetAvatarURL(u); err == nil {
+			return url, nil
 		}
 	}
 	return "", ErrNoAvatarURL

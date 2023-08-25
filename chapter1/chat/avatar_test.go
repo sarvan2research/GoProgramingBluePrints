@@ -49,7 +49,7 @@ func TestGravatarAvatar(t *testing.T) {
 	if err != nil {
 		t.Error("GravatarAvatar.GetAvatarURL should not return an error")
 	}
-	if url != "//www.gravatar.com/avatar/0bc83cb571cd1c50ba6f3e8a78ef1346" {
+	if url != "//www.gravatar.com/avatar/abc" {
 		t.Errorf("GravatarAvatar.GetAvatarURL wrongly returned %s", url)
 	}
 }
@@ -59,12 +59,12 @@ func TestFileSystemAvatar(t *testing.T) {
 	os.WriteFile(fileName, []byte{}, 0777)
 	defer os.Remove(fileName)
 	var fileSystemAvatar FileSystemAvatar
-	user := &chatUser{uniqueID: "abc"}
+	user := &chatUser{uniqueID: "123"}
 	url, err := fileSystemAvatar.GetAvatarURL(user)
 	if err != nil {
 		t.Error("FileSystemAvatar.GetAvatarURL should not return an error")
 	}
-	if url != "/avatars/abc.jpg" {
+	if url != "/avatars/123.jpg" {
 		t.Errorf("FileSystemAvatar.GetAvatarURL wrongly returned %s", url)
 	}
 }
