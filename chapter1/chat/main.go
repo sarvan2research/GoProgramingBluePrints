@@ -50,12 +50,15 @@ func main() {
 		google.New("930805643740-4ti2p9nplh3flth438fl2711lu4egci1.apps.googleusercontent.com", "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",
 			"http://localhost:8080/auth/callback/google"),
 	)
-	r := newRoom(UseAuthAvatar)
+	r := newRoom(UseFileSystemAvatar)
 	r.tracer = trace.New(os.Stdout)
 	//http.Handle("/", &templateHandler{fileName: "chat.html"})
 	http.Handle("/chat", MustAuth(&templateHandler{fileName: "chat.html"}))
+	http.Handle("/upload", &templateHandler{fileName: "upload.html"})
 	http.Handle("/login", &templateHandler{fileName: "login.html"})
+	http.Handle("/avatars/", http.StripPrefix("/avatars/", http.FileServer(http.Dir("./avatars"))))
 	http.HandleFunc("/auth/", loginHandler)
+	http.HandleFunc("/uploader", uploaderHandler)
 	http.HandleFunc("/logout", func(writer http.ResponseWriter, request *http.Request) {
 		http.SetCookie(writer, &http.Cookie{
 			Name:   "auth",

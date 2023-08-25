@@ -1,9 +1,11 @@
 package main
 
 import (
+	"crypto/md5"
 	"fmt"
 	"github.com/stretchr/gomniauth"
 	"github.com/stretchr/objx"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -78,9 +80,14 @@ func loginHandler(writer http.ResponseWriter, r *http.Request) {
 				provider, err), http.StatusInternalServerError)
 			return
 		}
+		m := md5.New()
+		io.WriteString(m, strings.ToLower(strings.TrimSpace(user.Email())))
+		userId := fmt.Sprintf("%x", m.Sum(nil))
 		authCookieValue := objx.New(map[string]interface{}{
+			"userid":     userId,
 			"name":       user.Name(),
 			"avatar_url": user.AvatarURL(),
+			"email":      user.Email(),
 		}).MustBase64()
 		http.SetCookie(writer, &http.Cookie{
 			Name:  "auth",
@@ -92,5 +99,4 @@ func loginHandler(writer http.ResponseWriter, r *http.Request) {
 		writer.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(writer, "Auth action %s not supported", action)
 	}
-
 }

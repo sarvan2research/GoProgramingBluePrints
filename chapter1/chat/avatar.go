@@ -1,6 +1,10 @@
 package main
 
-import "errors"
+import (
+	"errors"
+	"os"
+	"path"
+)
 
 // ErrNoAvatar is the error that is returned when the
 // Avatar instance is unable to provide an avatar URL.
@@ -27,6 +31,45 @@ func (AuthAvatar) GetAvatarURL(c *client) (string, error) {
 	if url, ok := c.userData["avatar_url"]; ok {
 		if urlString, ok := url.(string); ok {
 			return urlString, nil
+		}
+	}
+	return "", ErrNoAvatarURL
+}
+
+type GravatarAvatar struct {
+}
+
+var UseGravatar GravatarAvatar
+
+func (GravatarAvatar) GetAvatarURL(c *client) (string, error) {
+	if userid, ok := c.userData["userid"]; ok {
+		if useridString, ok := userid.(string); ok {
+			return "//www.gravatar.com/avatar/" + useridString, nil
+		}
+	}
+	return "", ErrNoAvatarURL
+}
+
+type FileSystemAvatar struct {
+}
+
+var UseFileSystemAvatar FileSystemAvatar
+
+func (FileSystemAvatar) GetAvatarURL(c *client) (string, error) {
+	if userid, ok := c.userData["userid"]; ok {
+		if useridStr := userid.(string); ok {
+			files, err := os.ReadDir("avatars")
+			if err != nil {
+				return "", ErrNoAvatarURL
+			}
+			for _, file := range files {
+				if file.IsDir() {
+					continue
+				}
+				if match, _ := path.Match(useridStr+"*", file.Name()); match {
+					return "/avatars/" + file.Name(), nil
+				}
+			}
 		}
 	}
 	return "", ErrNoAvatarURL
