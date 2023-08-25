@@ -20,6 +20,8 @@ type Avatar interface {
 type AuthAvatar struct {
 }
 
+var UseAuthAvatar AuthAvatar
+
 // get away from  (auth AuthAvatar) =>(AuthAvatar) no explicit auth variable to avoid nil reference failure
 func (AuthAvatar) GetAvatarURL(c *client) (string, error) {
 	if url, ok := c.userData["avatar_url"]; ok {
