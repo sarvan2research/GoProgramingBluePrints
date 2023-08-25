@@ -18,7 +18,7 @@ type Avatar interface {
 	// or returns an error if something goes wrong.
 	// ErrNoAvatarURL is returned if the object is unable to get
 	// a URL for the specified client.
-	GetAvatarURL(c *client) (string, error)
+	GetAvatarURL(ChatUser) (string, error)
 }
 
 type AuthAvatar struct {
@@ -27,13 +27,12 @@ type AuthAvatar struct {
 var UseAuthAvatar AuthAvatar
 
 // get away from  (auth AuthAvatar) =>(AuthAvatar) no explicit auth variable to avoid nil reference failure
-func (AuthAvatar) GetAvatarURL(c *client) (string, error) {
-	if url, ok := c.userData["avatar_url"]; ok {
-		if urlString, ok := url.(string); ok {
-			return urlString, nil
-		}
+func (AuthAvatar) GetAvatarURL(c ChatUser) (string, error) {
+	url := c.AvatarURL()
+	if len(url) == 0 {
+		return "", ErrNoAvatarURL
 	}
-	return "", ErrNoAvatarURL
+	return url, nil
 }
 
 type GravatarAvatar struct {
@@ -41,13 +40,8 @@ type GravatarAvatar struct {
 
 var UseGravatar GravatarAvatar
 
-func (GravatarAvatar) GetAvatarURL(c *client) (string, error) {
-	if userid, ok := c.userData["userid"]; ok {
-		if useridString, ok := userid.(string); ok {
-			return "//www.gravatar.com/avatar/" + useridString, nil
-		}
-	}
-	return "", ErrNoAvatarURL
+func (GravatarAvatar) GetAvatarURL(c ChatUser) (string, error) {
+	return "//www.gravatar.com/avatar/" + c.UniqueID(), nil
 }
 
 type FileSystemAvatar struct {
@@ -55,20 +49,14 @@ type FileSystemAvatar struct {
 
 var UseFileSystemAvatar FileSystemAvatar
 
-func (FileSystemAvatar) GetAvatarURL(c *client) (string, error) {
-	if userid, ok := c.userData["userid"]; ok {
-		if useridStr := userid.(string); ok {
-			files, err := os.ReadDir("avatars")
-			if err != nil {
-				return "", ErrNoAvatarURL
+func (FileSystemAvatar) GetAvatarURL(c ChatUser) (string, error) {
+	if files, err := os.ReadDir("avatars"); err == nil {
+		for _, file := range files {
+			if file.IsDir() {
+				continue
 			}
-			for _, file := range files {
-				if file.IsDir() {
-					continue
-				}
-				if match, _ := path.Match(useridStr+"*", file.Name()); match {
-					return "/avatars/" + file.Name(), nil
-				}
+			if match, _ := path.Match(c.UniqueID()+"*", file.Name()); match {
+				return "/avatars/" + file.Name(), nil
 			}
 		}
 	}

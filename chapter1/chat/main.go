@@ -16,6 +16,8 @@ import (
 	"text/template"
 )
 
+var avatars Avatar = UseFileSystemAvatar
+
 type templateHandler struct {
 	once     sync.Once
 	fileName string
@@ -50,7 +52,7 @@ func main() {
 		google.New("930805643740-4ti2p9nplh3flth438fl2711lu4egci1.apps.googleusercontent.com", "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",
 			"http://localhost:8080/auth/callback/google"),
 	)
-	r := newRoom(UseFileSystemAvatar)
+	r := newRoom()
 	r.tracer = trace.New(os.Stdout)
 	//http.Handle("/", &templateHandler{fileName: "chat.html"})
 	http.Handle("/chat", MustAuth(&templateHandler{fileName: "chat.html"}))
